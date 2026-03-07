@@ -696,7 +696,7 @@ async function refreshData(btn) {
 
 async function loadVerdicts() {
   try {
-    DB = await fetchFromCloudinary('verdicts_db');
+    DB = await fetchFromCloudinary('verdicts_db.json');
     render();
   } catch(e) {
     document.getElementById('vlist').innerHTML = `
