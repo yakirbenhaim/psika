@@ -159,8 +159,9 @@ mark.hl-user{background:#fef08a}
       style="text-align:center;font-size:20px;letter-spacing:6px;margin-bottom:10px;direction:ltr"
       inputmode="numeric"
       onkeydown="if(event.key==='Enter')verifyPassword()">
-    <div id="auth-error" style="color:#ef4444;font-size:13px;margin-bottom:10px;min-height:20px"></div>
-    <button onclick="verifyPassword()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">כניסה</button>
+    <div id="auth-error" style="color:#ef4444;font-size:13px;margin-bottom:10px;min-height:20px;line-height:1.4"></div>
+    <button id="auth-submit-btn" onclick="verifyPassword()" style="width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit">כניסה</button>
+    <button id="auth-retry-btn" onclick="location.reload()" style="display:none;width:100%;margin-top:8px;padding:10px;background:transparent;color:var(--gray-500);border:1px solid var(--gray-200);border-radius:var(--r);font-size:13px;cursor:pointer;font-family:inherit">🔄 רענן דף</button>
   </div>
 </div>
 
@@ -619,31 +620,44 @@ async function loadVerdicts() {
     DB = await fetchLatestByTag('verdicts_tag');
     render();
   } catch(e) {
-    // fallback — קובץ מקומי
-    try {
-      const r = await fetch('./verdicts.json');
-      if (!r.ok) throw new Error();
-      DB = await r.json();
-      render();
-    } catch {
-      showLocalFilePicker();
-    }
+    document.getElementById('vlist').innerHTML = `
+      <div class="empty">
+        <div class="eico">⚠️</div>
+        <h3>שגיאה בטעינת הנתונים</h3>
+        <p>לא ניתן לטעון את מסד הנתונים מהענן.<br>אנא פנה למנהל המערכת.</p>
+        <button onclick="loadVerdicts()" style="margin-top:16px;padding:10px 24px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);cursor:pointer;font-family:inherit;font-size:14px">נסה שנית</button>
+      </div>`;
   }
+}
+
+function showOverlayError(msg) {
+  document.getElementById('auth-error').textContent = msg;
+  document.getElementById('auth-id-inp').style.display = 'none';
+  document.getElementById('auth-submit-btn').style.display = 'none';
+  document.getElementById('auth-retry-btn').style.display = 'block';
 }
 
 async function init() {
   const token = localStorage.getItem('auth_token');
 
-  // בדוק אם קיימת רשימת משתמשים בCloudinary
+  // טוען רשימת משתמשים מCloudinary
   let users = null;
   try {
     users = await fetchLatestByTag('users_tag');
   } catch(e) {
-    // אין רשימת משתמשים — גישה פתוחה
+    // נכשל — אם יש token שמור ננסה לאמת אותו בכניסה הבאה
+    // אך אם אין — נציג שגיאת חיבור ולא נאפשר כניסה
+    if (!token) {
+      showOverlayError('⚠️ שגיאת חיבור — לא ניתן לטעון רשימת המשתמשים. נסה לרענן את הדף.');
+      return;
+    }
+    // יש token אבל לא הצלחנו לאמת — הצג שגיאה
+    showOverlayError('⚠️ שגיאת חיבור — לא ניתן לאמת. נסה לרענן את הדף.');
+    return;
   }
 
+  // אין משתמשים מוגדרים כלל — גישה חופשית
   if (!users || users.length === 0) {
-    // אין משתמשים מוגדרים — גישה חופשית
     showApp('');
     await loadVerdicts();
     return;
