@@ -638,8 +638,8 @@ async function sha256(text) {
 }
 
 async function fetchFromCloudinary(publicId) {
-  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}?t=${Date.now()}`;
-  const r = await fetch(url);
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}`;
+  const r = await fetch(url, { cache: 'no-cache' });
   if (!r.ok) throw new Error(`שגיאה (${r.status})`);
   return r.json();
 }
