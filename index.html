@@ -513,10 +513,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מצורף</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px">📄 פתח PDF</a>
       </div>` : ''}
     `;
   } else if (v.type === 'legislation') {
@@ -530,10 +527,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך חקיקה</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px;background:#7c3aed">⚖️ פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;background:#7c3aed">⚖️ פתח PDF</a>
       </div>` : ''}
     `;
   } else {
@@ -559,10 +553,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מקור</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px">📄 פתח PDF</a>
       </div>` : ''}
     `;
   }
