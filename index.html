@@ -561,16 +561,11 @@ async function sha256(text) {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-async function fetchLatestByTag(tagName) {
-  const listUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/list/${tagName}.json`;
-  const r = await fetch(listUrl + `?t=${Date.now()}`);
-  if (!r.ok) throw new Error(`רשימת ${tagName} לא נמצאה`);
-  const list = await r.json();
-  if (!list.resources || !list.resources.length) throw new Error(`אין קבצים ב-${tagName}`);
-  const newest = list.resources.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-  const r2 = await fetch(newest.secure_url + `?t=${Date.now()}`);
-  if (!r2.ok) throw new Error('שגיאה בטעינת קובץ');
-  return r2.json();
+async function fetchFromCloudinary(publicId) {
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?t=${Date.now()}`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`שגיאה (${r.status})`);
+  return r.json();
 }
 
 let _cachedUsers = null;
@@ -617,7 +612,7 @@ function logout() {
 
 async function loadVerdicts() {
   try {
-    DB = await fetchLatestByTag('verdicts_tag');
+    DB = await fetchFromCloudinary('verdicts_db');
     render();
   } catch(e) {
     document.getElementById('vlist').innerHTML = `
@@ -643,7 +638,7 @@ async function init() {
   // טוען רשימת משתמשים מCloudinary
   let users = null;
   try {
-    users = await fetchLatestByTag('users_tag');
+    users = await fetchFromCloudinary('users_db');
   } catch(e) {
     // נכשל — אם יש token שמור ננסה לאמת אותו בכניסה הבאה
     // אך אם אין — נציג שגיאת חיבור ולא נאפשר כניסה
