@@ -124,10 +124,14 @@ mark.hl-search{background:#fb923c;color:#000}
 mark.hl-user{background:#fef08a}
 
 /* ── MOBILE ── */
-.mob-filter-btn{display:none;align-items:center;gap:6px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--r);padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;color:var(--gray-700);font-family:inherit;width:100%}
+.mob-filter-btn{display:none;align-items:center;gap:6px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:var(--r);padding:10px 14px;font-size:14px;font-weight:600;cursor:pointer;color:var(--gray-700);font-family:inherit;width:100%}
 .mob-filter-btn.active{background:var(--blue-light);border-color:var(--blue);color:var(--blue)}
+.filter-chip{display:inline-flex;align-items:center;gap:4px;background:var(--blue-light);color:var(--blue);border:1px solid #93c5fd;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap}
+.filter-chip:hover{background:#bfdbfe}
 
 @media(max-width:768px){
+  .fo{padding:10px 8px;font-size:14px}
+  .mob-filter-btn{position:sticky;top:54px;z-index:90;margin-bottom:8px}
   .hdr{padding:0 14px;height:54px}
   .hdr-title{font-size:15px}
   .hdr-title svg{width:22px;height:22px}
@@ -144,10 +148,16 @@ mark.hl-user{background:#fef08a}
   .vcard-ref{font-size:14px}
   .det-ref{font-size:19px}
 }
+@media(max-width:380px){
+  .ro-badge{display:none}
+  .btn-sm{padding:4px 8px;font-size:11px}
+  .hdr-title{font-size:14px}
+}
 </style>
 </head>
 <body>
 
+<!-- AUTH OVERLAY -->
 <div id="auth-overlay" style="position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:36px 32px;max-width:360px;width:calc(100% - 32px);text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.4)">
     <div style="font-size:52px;margin-bottom:14px">🔐</div>
@@ -164,6 +174,7 @@ mark.hl-user{background:#fef08a}
   </div>
 </div>
 
+<!-- HEADER -->
 <header class="hdr">
   <div class="hdr-title">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -183,8 +194,12 @@ mark.hl-user{background:#fef08a}
   </div>
 </header>
 
+<!-- ACTIVE FILTERS BAR (mobile) -->
+<div id="active-filters-bar" style="display:none;padding:6px 12px;background:#fff;border-bottom:1px solid var(--gray-200);gap:6px;flex-wrap:wrap;align-items:center"></div>
+
 <div class="app-body">
 
+  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sb-card">
       <div class="sb-title">סוג רשומה</div>
@@ -208,6 +223,7 @@ mark.hl-user{background:#fef08a}
     <button class="btn-clr" onclick="clearFilters()">נקה סינון</button>
   </aside>
 
+  <!-- MAIN -->
   <main class="main">
     <button class="mob-filter-btn" id="mob-filter-btn" onclick="toggleMobFilters()">☰ סינון ופילטרים</button>
     <div class="search-wrap">
@@ -235,6 +251,7 @@ mark.hl-user{background:#fef08a}
   </main>
 </div>
 
+<!-- DETAIL MODAL -->
 <div id="m-detail" class="overlay" style="display:none" onclick="if(event.target.id==='m-detail')closeDetail()">
 <div class="modal" onclick="event.stopPropagation()">
   <div class="modal-hdr">
@@ -322,13 +339,58 @@ function buildFL(elId, map, key, valMap) {
   }
   el.innerHTML = h;
   el.querySelectorAll('.fo').forEach(e => {
-    e.addEventListener('click', () => { activeF[key] = e.dataset.val||null; render(); });
+    e.addEventListener('click', () => {
+      activeF[key] = e.dataset.val || null;
+      render();
+      if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('mob-open');
+        document.getElementById('mob-filter-btn').classList.remove('active');
+        document.getElementById('vlist').scrollIntoView({ behavior: 'smooth' });
+      }
+    });
   });
 }
 function foItem(val, label, cnt, key, cur) {
   const active = (val===cur)||(!val&&!cur) ? 'active':'';
   const dv = val ? `data-val="${esc(val)}"` : '';
   return `<div class="fo ${active}" ${dv}><span>${label}</span><span class="fc">${cnt}</span></div>`;
+}
+
+// ── MOBILE HELPERS ─────────────────────────────────────────────────────────
+function updateMobFilterBadge() {
+  const count = [activeF.tag, activeF.flag, activeF.type].filter(Boolean).length
+    + (document.getElementById('df-from').value ? 1 : 0)
+    + (document.getElementById('df-to').value ? 1 : 0);
+  const btn = document.getElementById('mob-filter-btn');
+  if (!btn) return;
+  const isOpen = document.getElementById('sidebar').classList.contains('mob-open');
+  btn.textContent = isOpen ? '✕ סגור סינון'
+    : count > 0 ? `☰ סינון (${count} פעיל)` : '☰ סינון ופילטרים';
+  if (!isOpen) btn.classList.toggle('active', count > 0);
+}
+
+const TYPE_LABELS = { verdict: 'פסקי דין', info: 'מידע', legislation: 'חקיקה' };
+const FLAG_LABELS = { anchor: '📌 חשוב', danger: '⚠️ סנגוריאלי' };
+
+function updateActiveFiltersBar() {
+  const bar = document.getElementById('active-filters-bar');
+  if (!bar) return;
+  const chips = [];
+  if (activeF.type) chips.push([TYPE_LABELS[activeF.type] || activeF.type, () => { activeF.type = null; render(); }]);
+  if (activeF.tag)  chips.push([`תגית: ${activeF.tag}`, () => { activeF.tag = null; render(); }]);
+  if (activeF.flag) chips.push([FLAG_LABELS[activeF.flag] || activeF.flag, () => { activeF.flag = null; render(); }]);
+  const df = document.getElementById('df-from').value;
+  const dt = document.getElementById('df-to').value;
+  if (df) chips.push([`מ-${df}`, () => { document.getElementById('df-from').value = ''; render(); }]);
+  if (dt) chips.push([`עד-${dt}`, () => { document.getElementById('df-to').value = ''; render(); }]);
+  if (!chips.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  bar.innerHTML = chips.map((_, i) =>
+    `<span class="filter-chip" data-idx="${i}">${esc(_[0])} <span style="font-weight:700;margin-right:2px">×</span></span>`
+  ).join('');
+  bar.querySelectorAll('.filter-chip').forEach(el => {
+    el.addEventListener('click', () => chips[+el.dataset.idx][1]());
+  });
 }
 
 // ── SEARCH & RENDER ────────────────────────────────────────────────────────
@@ -366,6 +428,8 @@ function render() {
   statsEl.textContent = list.length===DB.length
     ? `סה"כ ${totalVerdicts} פסקי דין${DB.length>totalVerdicts?` + ${DB.length-totalVerdicts} כרטיסי מידע`:''}`
     : `מציג ${list.length} מתוך ${DB.length}`;
+  updateMobFilterBadge();
+  updateActiveFiltersBar();
   const el = document.getElementById('vlist');
   if (!list.length) {
     el.innerHTML = `<div class="empty"><div class="eico">📋</div><h3>${DB.length?'לא נמצאו תוצאות':'אין פסקי דין'}</h3><p>${DB.length?'שנה את החיפוש או הסינון':''}</p></div>`;
@@ -449,7 +513,10 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מצורף</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח קובץ מקור (PDF)</a>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
+        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
+          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
+        </object>
       </div>` : ''}
     `;
   } else if (v.type === 'legislation') {
@@ -463,7 +530,10 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך חקיקה</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px;background:#7c3aed">⚖️ פתח קובץ מקור (PDF)</a>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px;background:#7c3aed">⚖️ פתח PDF</a>
+        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
+          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
+        </object>
       </div>` : ''}
     `;
   } else {
@@ -489,7 +559,10 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מקור</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח קובץ מקור (PDF)</a>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
+        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
+          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
+        </object>
       </div>` : ''}
     `;
   }
@@ -507,6 +580,11 @@ function clearFilters() {
   document.getElementById('df-to').value='';
   document.getElementById('search-inp').value='';
   render();
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('mob-open');
+    document.getElementById('mob-filter-btn').classList.remove('active');
+    document.getElementById('vlist').scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 function filterDocs() { activeF.type = 'info'; render(); document.getElementById('vlist').scrollIntoView({ behavior: 'smooth' }); }
@@ -560,19 +638,8 @@ async function sha256(text) {
 }
 
 async function fetchFromCloudinary(publicId) {
-  // מוסיף פרמטר זמן כדי ש-Cloudinary יחשוב שזו בקשה חדשה לגמרי
-  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?_t=${Date.now()}`;
-  
-  const r = await fetch(url, {
-    method: 'GET',
-    cache: 'no-store', // פקודה נוקשה לדפדפן: אל תחפש במטמון
-    headers: {
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
-    }
-  });
-  
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}?t=${Date.now()}`;
+  const r = await fetch(url);
   if (!r.ok) throw new Error(`שגיאה (${r.status})`);
   return r.json();
 }
@@ -602,6 +669,7 @@ async function verifyPassword() {
   if (match) {
     localStorage.setItem('auth_token', hash);
     localStorage.setItem('user_name', match.name);
+    localStorage.setItem('auth_expires', Date.now() + 24 * 60 * 60 * 1000);
     errEl.textContent = '';
     showApp(match.name);
     await loadVerdicts();
@@ -616,6 +684,7 @@ async function verifyPassword() {
 function logout() {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user_name');
+  localStorage.removeItem('auth_expires');
   location.reload();
 }
 
@@ -648,7 +717,15 @@ function showOverlayError(msg) {
 }
 
 async function init() {
-  const token = localStorage.getItem('auth_token');
+  let token = localStorage.getItem('auth_token');
+  // בדיקת תפוגת token (24 שעות)
+  const expires = parseInt(localStorage.getItem('auth_expires') || '0');
+  if (token && Date.now() > expires) {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_expires');
+    localStorage.removeItem('user_name');
+    token = null;
+  }
 
   // טוען רשימת משתמשים מCloudinary
   let users = null;
