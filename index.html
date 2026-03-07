@@ -148,7 +148,6 @@ mark.hl-user{background:#fef08a}
 </head>
 <body>
 
-<!-- AUTH OVERLAY -->
 <div id="auth-overlay" style="position:fixed;inset:0;background:var(--navy);z-index:9999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:16px;padding:36px 32px;max-width:360px;width:calc(100% - 32px);text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.4)">
     <div style="font-size:52px;margin-bottom:14px">🔐</div>
@@ -165,7 +164,6 @@ mark.hl-user{background:#fef08a}
   </div>
 </div>
 
-<!-- HEADER -->
 <header class="hdr">
   <div class="hdr-title">
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -187,7 +185,6 @@ mark.hl-user{background:#fef08a}
 
 <div class="app-body">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="sb-card">
       <div class="sb-title">סוג רשומה</div>
@@ -211,7 +208,6 @@ mark.hl-user{background:#fef08a}
     <button class="btn-clr" onclick="clearFilters()">נקה סינון</button>
   </aside>
 
-  <!-- MAIN -->
   <main class="main">
     <button class="mob-filter-btn" id="mob-filter-btn" onclick="toggleMobFilters()">☰ סינון ופילטרים</button>
     <div class="search-wrap">
@@ -239,7 +235,6 @@ mark.hl-user{background:#fef08a}
   </main>
 </div>
 
-<!-- DETAIL MODAL -->
 <div id="m-detail" class="overlay" style="display:none" onclick="if(event.target.id==='m-detail')closeDetail()">
 <div class="modal" onclick="event.stopPropagation()">
   <div class="modal-hdr">
@@ -454,10 +449,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מצורף</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח קובץ מקור (PDF)</a>
       </div>` : ''}
     `;
   } else if (v.type === 'legislation') {
@@ -471,10 +463,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך חקיקה</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px;background:#7c3aed">⚖️ פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px;background:#7c3aed">⚖️ פתח קובץ מקור (PDF)</a>
       </div>` : ''}
     `;
   } else {
@@ -500,10 +489,7 @@ function openDetail(id) {
       ${v.pdfUrl ? `
       <div class="det-sec">
         <div class="det-sec-title">מסמך מקור</div>
-        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
-        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
-          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
-        </object>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח קובץ מקור (PDF)</a>
       </div>` : ''}
     `;
   }
@@ -574,8 +560,17 @@ async function sha256(text) {
 }
 
 async function fetchFromCloudinary(publicId) {
-  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?t=${Date.now()}`;
-  const r = await fetch(url);
+  // עוקף את הקאש בצורה חזקה עם מספר אקראי והגדרות Cache-Control
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?t=${new Date().getTime()}&r=${Math.random()}`;
+  const r = await fetch(url, {
+    method: 'GET',
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  });
   if (!r.ok) throw new Error(`שגיאה (${r.status})`);
   return r.json();
 }
