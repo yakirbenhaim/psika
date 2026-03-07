@@ -560,17 +560,19 @@ async function sha256(text) {
 }
 
 async function fetchFromCloudinary(publicId) {
-  // עוקף את הקאש בצורה חזקה עם מספר אקראי והגדרות Cache-Control
-  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?t=${new Date().getTime()}&r=${Math.random()}`;
+  // מוסיף פרמטר זמן כדי ש-Cloudinary יחשוב שזו בקשה חדשה לגמרי
+  const url = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/raw/upload/${publicId}.json?_t=${Date.now()}`;
+  
   const r = await fetch(url, {
     method: 'GET',
-    cache: 'no-store',
+    cache: 'no-store', // פקודה נוקשה לדפדפן: אל תחפש במטמון
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'
     }
   });
+  
   if (!r.ok) throw new Error(`שגיאה (${r.status})`);
   return r.json();
 }
