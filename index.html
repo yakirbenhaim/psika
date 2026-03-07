@@ -179,6 +179,7 @@ mark.hl-user{background:#fef08a}
       <span>👮 <span id="user-name-display"></span></span>
       <button onclick="logout()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:var(--r-sm);padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit">התנתק</button>
     </div>
+    <button class="btn btn-secondary btn-sm" onclick="refreshData(this)">🔄 רענן</button>
     <button class="btn btn-secondary btn-sm" onclick="filterDocs()">📄 מסמכים</button>
     <span class="ro-badge">צפייה בלבד</span>
   </div>
@@ -426,6 +427,9 @@ function render() {
           <div class="vcard-parties">${hl(v.parties,q)}</div>
           ${v.date?`<div class="vcard-date">${fmtDate(v.date)}</div>`:''}
         </div>
+        <div class="vcard-meta">
+          ${v.pdfUrl ? `<a href="${esc(v.pdfUrl)}" target="_blank" onclick="event.stopPropagation()" class="badge badge-blue" style="text-decoration:none">📄 PDF</a>` : ''}
+        </div>
       </div>
       ${tagsRow?`<div class="offense-row">${tagsRow}</div>`:''}
       ${prin}${sumPrev}
@@ -493,6 +497,14 @@ function openDetail(id) {
       ${v.principle?`<div class="det-sec"><div class="det-sec-title">עיקרון משפטי</div><div class="det-principle">${hlInHtml(renderMd(v.principle),q)}</div></div>`:''}
       <div class="det-sec"><div class="det-sec-title">סיכום פסק הדין</div><div class="det-summary">${hlInHtml(renderMd(v.summary),q)}</div></div>
       ${tags?`<div class="det-sec"><div class="det-sec-title">תגיות</div><div style="display:flex;gap:4px;flex-wrap:wrap">${tags}</div></div>`:''}
+      ${v.pdfUrl ? `
+      <div class="det-sec">
+        <div class="det-sec-title">מסמך מקור</div>
+        <a href="${esc(v.pdfUrl)}" target="_blank" class="btn btn-primary btn-sm" style="display:inline-flex;gap:6px;margin-bottom:12px">📄 פתח PDF</a>
+        <object data="${esc(v.pdfUrl)}" type="application/pdf" style="width:100%;height:520px;border:1px solid var(--gray-200);border-radius:8px;display:block">
+          <p style="padding:16px;color:var(--gray-500)">לא ניתן להציג את ה-PDF ישירות. <a href="${esc(v.pdfUrl)}" target="_blank">לחץ כאן לפתיחה</a></p>
+        </object>
+      </div>` : ''}
     `;
   }
   document.getElementById('detail-body').innerHTML = html;
@@ -608,6 +620,12 @@ function logout() {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user_name');
   location.reload();
+}
+
+async function refreshData(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  await loadVerdicts();
+  if (btn) { btn.textContent = '✅'; setTimeout(() => { btn.textContent = '🔄 רענן'; btn.disabled = false; }, 1500); }
 }
 
 async function loadVerdicts() {
