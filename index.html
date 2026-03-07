@@ -730,7 +730,7 @@ async function init() {
   // טוען רשימת משתמשים מCloudinary
   let users = null;
   try {
-    users = await fetchFromCloudinary('users_db');
+    users = await fetchFromCloudinary('users_db.json');
   } catch(e) {
     // נכשל — אם יש token שמור ננסה לאמת אותו בכניסה הבאה
     // אך אם אין — נציג שגיאת חיבור ולא נאפשר כניסה
